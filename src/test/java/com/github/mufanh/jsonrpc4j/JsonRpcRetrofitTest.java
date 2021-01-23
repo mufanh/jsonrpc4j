@@ -1,7 +1,6 @@
 package com.github.mufanh.jsonrpc4j;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.github.mufanh.jsonrpc4j.annotation.JsonRpcMethod;
@@ -35,7 +34,7 @@ public class JsonRpcRetrofitTest {
     }
 
     @Data
-    @JsonNaming(value = PropertyNamingStrategy.UpperCamelCaseStrategy.class)
+    @JsonNaming(PropertyNamingStrategy.UpperCamelCaseStrategy.class)
     static class ChainHead {
 
         private List<Cid> cids;
@@ -44,7 +43,7 @@ public class JsonRpcRetrofitTest {
     }
 
     @Data
-    @JsonNaming(value = PropertyNamingStrategy.UpperCamelCaseStrategy.class)
+    @JsonNaming(PropertyNamingStrategy.UpperCamelCaseStrategy.class)
     static class Cid {
 
         @JsonProperty("/")
@@ -52,18 +51,63 @@ public class JsonRpcRetrofitTest {
     }
 
     @Data
-    @JsonNaming(value = PropertyNamingStrategy.UpperCamelCaseStrategy.class)
+    @JsonNaming(PropertyNamingStrategy.UpperCamelCaseStrategy.class)
     static class Block {
 
         private String miner;
 
         private Ticket ticket;
+
+        private ElectionProof electionProof;
+
+        private List<BeaconEntry> beaconEntries;
+
+        private List<WinPoStProof> winPoStProof;
+
+        private List<Cid> parents;
+
+        private String parentWeight;
+
+        private long height;
+
+        private Cid parentStateRoot;
+
+        private Cid parentMessageReceipts;
+
+        private Cid messages;
     }
 
     @Data
-    @JsonNaming(value = PropertyNamingStrategy.UpperCamelCaseStrategy.class)
+    @JsonNaming(PropertyNamingStrategy.UpperCamelCaseStrategy.class)
     static class Ticket {
 
         private String vRFProof;
+    }
+
+    @Data
+    @JsonNaming(PropertyNamingStrategy.UpperCamelCaseStrategy.class)
+    static class ElectionProof {
+
+        private int winCount;
+
+        private String vRFProof;
+    }
+
+    @Data
+    @JsonNaming(PropertyNamingStrategy.UpperCamelCaseStrategy.class)
+    static class BeaconEntry {
+
+        private long round;
+
+        private String data;
+    }
+
+    @Data
+    @JsonNaming(PropertyNamingStrategy.UpperCamelCaseStrategy.class)
+    static class WinPoStProof {
+
+        private long poStProof;
+
+        private String ProofBytes;
     }
 }
