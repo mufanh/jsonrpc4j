@@ -61,7 +61,7 @@ final class RequestBuilder {
         }
 
         ObjectNode contentNode = createObjectNode()
-                .put(ID, RANDOM.nextLong())
+                .put(ID, Math.abs(RANDOM.nextLong()))
                 .put(JSONRPC, VERSION)
                 .put(METHOD, methodType);
         JsonNode paramsNode = buildParamsNode();
