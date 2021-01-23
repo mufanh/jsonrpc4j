@@ -1,8 +1,12 @@
 package com.github.mufanh.jsonrpc4j;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.github.mufanh.jsonrpc4j.annotation.JsonRpcMethod;
 import com.github.mufanh.jsonrpc4j.annotation.JsonRpcService;
+import lombok.Data;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -20,6 +24,7 @@ public class JsonRpcRetrofitTest {
                 .build();
         FileCoinRpc fileCoinRpc = jsonRpcRetrofit.create(FileCoinRpc.class);
         Response<ChainHead> response = fileCoinRpc.chainHead().execute();
+        System.out.println(JsonUtils.toJSONString(response.getResult()));
     }
 
     @JsonRpcService
@@ -29,28 +34,36 @@ public class JsonRpcRetrofitTest {
         Call<ChainHead> chainHead();
     }
 
+    @Data
+    @JsonNaming(value = PropertyNamingStrategy.UpperCamelCaseStrategy.class)
     static class ChainHead {
 
-        private List<Cid> Cids;
+        private List<Cid> cids;
 
-        private List<Block> Blocks;
+        private List<Block> blocks;
     }
 
+    @Data
+    @JsonNaming(value = PropertyNamingStrategy.UpperCamelCaseStrategy.class)
     static class Cid {
 
         @JsonProperty("/")
-        private String Hex;
+        private String hex;
     }
 
+    @Data
+    @JsonNaming(value = PropertyNamingStrategy.UpperCamelCaseStrategy.class)
     static class Block {
 
-        private String Miner;
+        private String miner;
 
-        private Ticket Ticket;
+        private Ticket ticket;
     }
 
+    @Data
+    @JsonNaming(value = PropertyNamingStrategy.UpperCamelCaseStrategy.class)
     static class Ticket {
 
-        private String VRFProof;
+        private String vRFProof;
     }
 }

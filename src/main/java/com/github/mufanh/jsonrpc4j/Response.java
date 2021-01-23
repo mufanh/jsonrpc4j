@@ -1,5 +1,6 @@
 package com.github.mufanh.jsonrpc4j;
 
+import lombok.Getter;
 import okhttp3.ResponseBody;
 
 import static com.github.mufanh.jsonrpc4j.Utils.checkNotNull;
@@ -9,8 +10,10 @@ import static com.github.mufanh.jsonrpc4j.Utils.checkNotNull;
  */
 public final class Response<T> {
 
+    @Getter
     private final okhttp3.Response rawResponse;
 
+    @Getter
     private final T result;
 
     private Response(okhttp3.Response rawResponse, T result, ResponseBody errorBody) {

@@ -1,11 +1,9 @@
 package com.github.mufanh.jsonrpc4j;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -19,7 +17,9 @@ import java.io.IOException;
 class JsonUtils {
 
     private static final ObjectMapper mapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            .configure(MapperFeature.USE_STD_BEAN_NAMING, true)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 
     private JsonUtils() {
         throw new AssertionError("Cannot be instantiated");
@@ -55,5 +55,13 @@ class JsonUtils {
 
     public static JsonParser treeAsTokens(TreeNode treeNode) {
         return mapper.treeAsTokens(treeNode);
+    }
+
+    public static String toJSONString(Object object) {
+        try {
+            return mapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 }
