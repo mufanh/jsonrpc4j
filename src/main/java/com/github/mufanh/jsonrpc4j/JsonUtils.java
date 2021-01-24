@@ -19,7 +19,7 @@ class JsonUtils {
     private static final ObjectMapper mapper = new ObjectMapper()
             .configure(MapperFeature.USE_STD_BEAN_NAMING, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, true);
 
     private JsonUtils() {
         throw new AssertionError("Cannot be instantiated");
