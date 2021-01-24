@@ -3,6 +3,7 @@ package com.github.mufanh.jsonrpc4j;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import okhttp3.*;
 
@@ -11,6 +12,7 @@ import java.util.Collection;
 
 import static com.github.mufanh.jsonrpc4j.JsonRpcConstants.*;
 import static com.github.mufanh.jsonrpc4j.JsonUtils.*;
+import static com.github.mufanh.jsonrpc4j.JsonUtils.createArrayNode;
 
 /**
  * @author xinquan.huangxq
@@ -103,22 +105,22 @@ final class RequestBuilder {
             }
             return paramsNode;
         } else {
-            // == 1
-            if (args[0] instanceof Collection) {
-                Collection<?> collection = (Collection<?>) args[0];
-                if (!collection.isEmpty()) {
-                    ArrayNode paramsNode = new ArrayNode(getNodeFactory());
-                    for (Object arg : collection) {
-                        JsonNode argNode = valueToTree(arg);
-                        paramsNode.add(argNode);
-                    }
-                    return paramsNode;
-                }
+            if (paramsPassMode == JsonRpcParamsPassMode.ARRAY) {
+                ArrayNode paramsNode = createArrayNode();
+                paramsNode.add(valueToTree(args[0]));
+                return paramsNode;
             } else {
-                if (paramsPassMode == JsonRpcParamsPassMode.ARRAY) {
-                    ArrayNode paramsNode = createArrayNode();
-                    paramsNode.add(valueToTree(args[0]));
-                    return paramsNode;
+                // == 1
+                if (args[0] instanceof Collection) {
+                    Collection<?> collection = (Collection<?>) args[0];
+                    if (!collection.isEmpty()) {
+                        ArrayNode paramsNode = new ArrayNode(getNodeFactory());
+                        for (Object arg : collection) {
+                            JsonNode argNode = valueToTree(arg);
+                            paramsNode.add(argNode);
+                        }
+                        return paramsNode;
+                    }
                 } else {
                     return valueToTree(args[0]);
                 }
