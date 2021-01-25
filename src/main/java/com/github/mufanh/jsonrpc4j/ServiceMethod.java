@@ -58,6 +58,7 @@ class ServiceMethod<R, T> {
 
     R toResponse(ResponseBody body) throws IOException {
         JsonNode jsonNode = readTree(body.bytes());
+        System.out.println(jsonNode.toString());
         if (hasError(jsonNode)) {
             Throwable throwable = resolveException(jsonNode);
             if (throwable instanceof IOException) {
