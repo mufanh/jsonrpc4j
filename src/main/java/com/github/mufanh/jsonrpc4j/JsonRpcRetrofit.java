@@ -5,10 +5,8 @@ import com.github.mufanh.jsonrpc4j.annotation.JsonRpcService;
 import okhttp3.*;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,16 +31,20 @@ public class JsonRpcRetrofit {
     final boolean validateEagerly;
 
     final List<CallAdapter.Factory> callAdapterFactories;
+
     final Executor callbackExecutor;
 
-    JsonRpcRetrofit(okhttp3.Call.Factory callFactory, HttpUrl httpUrl, Headers headers,
-                    List<CallAdapter.Factory> callAdapterFactories,
-                    Executor callbackExecutor, boolean validateEagerly) {
+    final JsonBodyConverter jsonBodyConverter;
+
+    private JsonRpcRetrofit(okhttp3.Call.Factory callFactory, HttpUrl httpUrl, Headers headers,
+                            List<CallAdapter.Factory> callAdapterFactories,
+                            Executor callbackExecutor, JsonBodyConverter jsonBodyConverter, boolean validateEagerly) {
         this.callFactory = callFactory;
         this.httpUrl = httpUrl;
         this.headers = headers;
         this.callAdapterFactories = callAdapterFactories;
         this.callbackExecutor = callbackExecutor;
+        this.jsonBodyConverter = jsonBodyConverter;
         this.validateEagerly = validateEagerly;
     }
 
@@ -55,16 +57,18 @@ public class JsonRpcRetrofit {
 
         return (T) Proxy.newProxyInstance(service.getClassLoader(), new Class<?>[]{service},
                 new InvocationHandler() {
-
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         if (method.getDeclaringClass() == Object.class) {
                             return method.invoke(this, args);
                         }
+                        if (method.isDefault()) {
+                            return invokeDefaultMethod(method, service, proxy, args);
+                        }
                         ServiceMethod<Object, Object> serviceMethod =
                                 (ServiceMethod<Object, Object>) loadServiceMethod(method);
                         OkHttpCall<Object> okHttpCall = new OkHttpCall<>(serviceMethod, args);
-                        return serviceMethod.adapt(okHttpCall);
+                        return serviceMethod.callAdapter.adapt(okHttpCall);
                     }
                 });
     }
@@ -105,12 +109,14 @@ public class JsonRpcRetrofit {
 
     private void eagerlyValidateMethods(Class<?> service) {
         for (Method method : service.getDeclaredMethods()) {
-            loadServiceMethod(method);
+            if (!method.isDefault()) {
+                loadServiceMethod(method);
+            }
         }
     }
 
     @SuppressWarnings("rawtypes")
-    ServiceMethod<?, ?> loadServiceMethod(Method method) {
+    private ServiceMethod<?, ?> loadServiceMethod(Method method) {
         ServiceMethod<?, ?> result = serviceMethodCache.get(method);
         if (result != null) return result;
 
@@ -135,6 +141,8 @@ public class JsonRpcRetrofit {
         private boolean validateEagerly;
 
         private Executor callbackExecutor;
+
+        private JsonBodyConverter jsonBodyConverter;
 
         private final List<CallAdapter.Factory> callAdapterFactories = new ArrayList<>();
 
@@ -162,6 +170,11 @@ public class JsonRpcRetrofit {
             return httpUrl(url);
         }
 
+        public Builder jsonBodyConverter(JsonBodyConverter jsonBodyConverter) {
+            this.jsonBodyConverter = jsonBodyConverter;
+            return this;
+        }
+
         public Builder validateEagerly(boolean validateEagerly) {
             this.validateEagerly = validateEagerly;
             return this;
@@ -181,6 +194,9 @@ public class JsonRpcRetrofit {
             if (httpUrl == null) {
                 throw new IllegalStateException("HTTP URL required.");
             }
+            if (jsonBodyConverter == null) {
+                throw new IllegalStateException("JSON Converter required.");
+            }
 
             okhttp3.Call.Factory callFactory = this.callFactory;
             if (callFactory == null) {
@@ -197,7 +213,7 @@ public class JsonRpcRetrofit {
             }
 
             return new JsonRpcRetrofit(callFactory, httpUrl, headers,
-                    callAdapterFactories, callbackExecutor, validateEagerly);
+                    callAdapterFactories, callbackExecutor, jsonBodyConverter, validateEagerly);
         }
     }
 
@@ -214,5 +230,25 @@ public class JsonRpcRetrofit {
         if (!Utils.isAnnotationPresent(service.getAnnotations(), JsonRpcService.class)) {
             throw new IllegalArgumentException("API interfaces must has @JsonRpcService annotation.");
         }
+    }
+
+    /**
+     * 执行接口中的默认方法
+     *
+     * @param method
+     * @param declaringClass
+     * @param object
+     * @param args
+     * @return
+     * @throws Throwable
+     */
+    private Object invokeDefaultMethod(Method method, Class<?> declaringClass, Object object, Object... args)
+            throws Throwable {
+        Constructor<MethodHandles.Lookup> constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+        constructor.setAccessible(true);
+        return constructor.newInstance(declaringClass, -1 /* trusted */)
+                .unreflectSpecial(method, declaringClass)
+                .bindTo(object)
+                .invokeWithArguments(args);
     }
 }

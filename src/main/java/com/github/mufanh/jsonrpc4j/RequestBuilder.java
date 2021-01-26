@@ -1,31 +1,29 @@
 package com.github.mufanh.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import okhttp3.*;
 
+import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.Collection;
-
-import static com.github.mufanh.jsonrpc4j.JsonRpcConstants.*;
-import static com.github.mufanh.jsonrpc4j.JsonUtils.*;
-import static com.github.mufanh.jsonrpc4j.JsonUtils.createArrayNode;
+import java.util.*;
 
 /**
  * @author xinquan.huangxq
  */
 final class RequestBuilder {
 
+    private static final String CONTENT_TYPE = "application/json-rpc";
+    private static final String REQUEST_METHOD = "POST";
+    private static final String VERSION = "2.0";
+
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    private final JsonRpcRetrofit jsonRpcRetrofit;
 
     private final HttpUrl httpUrl;
 
     private final String methodType;
 
-    private final JsonRpcParamsPassMode paramsPassMode;
+    private final JsonRpcParamsMode paramsMode;
 
     private final Object[] args;
 
@@ -33,10 +31,12 @@ final class RequestBuilder {
 
     private MediaType contentType;
 
-    RequestBuilder(HttpUrl httpUrl, Headers headers, String methodType, JsonRpcParamsPassMode paramsPassMode, Object[] args) {
+    RequestBuilder(JsonRpcRetrofit jsonRpcRetrofit, HttpUrl httpUrl, Headers headers, String methodType, JsonRpcParamsMode paramsMode, Object[] args) {
+        this.jsonRpcRetrofit = jsonRpcRetrofit;
+
         this.httpUrl = httpUrl;
         this.methodType = methodType;
-        this.paramsPassMode = paramsPassMode;
+        this.paramsMode = paramsMode;
         this.args = args;
 
         this.requestBuilder = new Request.Builder();
@@ -59,26 +59,30 @@ final class RequestBuilder {
 
     Request build() {
         if (contentType == null) {
-            contentType = MediaType.parse(JsonRpcConstants.JSONRPC_CONTENT_TYPE);
+            contentType = MediaType.parse(CONTENT_TYPE);
         }
 
-        ObjectNode contentNode = createObjectNode()
-                .put(ID, Math.abs(RANDOM.nextLong()))
-                .put(JSONRPC, VERSION)
-                .put(METHOD, methodType);
-        JsonNode paramsNode = buildParamsNode();
-        if (paramsNode != null) {
-            contentNode.set(PARAMS, paramsNode);
+        JsonRpcRequest jsonRpcRequest = JsonRpcRequest.builder()
+                .id(Math.abs(RANDOM.nextLong()))
+                .jsonrpc(VERSION)
+                .method(methodType)
+                .params(createRequestParams())
+                .build();
+
+        String requestBody;
+        try {
+            requestBody = jsonRpcRetrofit.jsonBodyConverter.convertRequest(jsonRpcRequest);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to convert json-rpc request", e);
         }
 
         return requestBuilder
                 .url(httpUrl)
-                .method(JsonRpcConstants.JSONRPC_REQUEST_METHOD,
-                        RequestBody.create(contentType, contentNode.toString()))
+                .method(REQUEST_METHOD, RequestBody.create(contentType, requestBody))
                 .build();
     }
 
-    private JsonNode buildParamsNode() {
+    private Object createRequestParams() {
         if (args == null || args.length == 0) {
             return null;
         }
@@ -87,7 +91,7 @@ final class RequestBuilder {
             return null;
         }
 
-        if (paramsPassMode == JsonRpcParamsPassMode.OBJECT) {
+        if (paramsMode == JsonRpcParamsMode.OBJECT) {
             if (args.length > 1) {
                 throw new IllegalArgumentException("Method cannot has more than 1 arg.");
             } else {
@@ -99,34 +103,22 @@ final class RequestBuilder {
         }
 
         if (args.length > 1) {
-            ArrayNode paramsNode = new ArrayNode(getNodeFactory());
-            for (Object arg : args) {
-                paramsNode.add(valueToTree(arg));
-            }
-            return paramsNode;
+            return Arrays.asList(args);
         } else {
-            if (paramsPassMode == JsonRpcParamsPassMode.ARRAY) {
-                ArrayNode paramsNode = createArrayNode();
-                paramsNode.add(valueToTree(args[0]));
-                return paramsNode;
+            // ==1
+            if (paramsMode == JsonRpcParamsMode.ARRAY) {
+                return Collections.singletonList(args[0]);
             } else {
-                // == 1
                 if (args[0] instanceof Collection) {
                     Collection<?> collection = (Collection<?>) args[0];
                     if (!collection.isEmpty()) {
-                        ArrayNode paramsNode = new ArrayNode(getNodeFactory());
-                        for (Object arg : collection) {
-                            JsonNode argNode = valueToTree(arg);
-                            paramsNode.add(argNode);
-                        }
-                        return paramsNode;
+                        return new ArrayList<Object>(collection);
                     }
                 } else {
-                    return valueToTree(args[0]);
+                    return args[0];
                 }
             }
         }
-
         return null;
     }
 }

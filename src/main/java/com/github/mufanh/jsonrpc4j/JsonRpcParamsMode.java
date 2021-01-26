@@ -3,7 +3,7 @@ package com.github.mufanh.jsonrpc4j;
 /**
  * @author xinquan.huangxq
  */
-public enum JsonRpcParamsPassMode {
+public enum JsonRpcParamsMode {
     AUTO,
     ARRAY,
     OBJECT

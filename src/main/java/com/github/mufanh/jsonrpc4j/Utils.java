@@ -1,6 +1,5 @@
 package com.github.mufanh.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import okhttp3.ResponseBody;
 import okio.Buffer;
 
@@ -17,14 +16,12 @@ class Utils {
         throw new AssertionError("Cannot be instantiated");
     }
 
-    static <T extends Annotation> boolean isAnnotationPresent(
-            Annotation[] annotations, Class<T> cls) {
+    static <T extends Annotation> boolean isAnnotationPresent(Annotation[] annotations, Class<T> cls) {
         return findAnnotation(annotations, cls) != null;
     }
 
-    static <T extends Annotation> T findAnnotation(
-            Annotation[] annotations,
-            Class<T> cls) {
+    @SuppressWarnings("unchecked")
+    static <T extends Annotation> T findAnnotation(Annotation[] annotations, Class<T> cls) {
         for (Annotation annotation : annotations) {
             if (cls.isInstance(annotation)) {
                 return (T) annotation;
@@ -63,8 +60,7 @@ class Utils {
     static Type getParameterUpperBound(int index, ParameterizedType type) {
         Type[] types = type.getActualTypeArguments();
         if (index < 0 || index >= types.length) {
-            throw new IllegalArgumentException(
-                    "Index " + index + " not in range [0," + types.length + ") for " + type);
+            throw new IllegalArgumentException("Index " + index + " not in range [0," + types.length + ") for " + type);
         }
         Type paramType = types[index];
         if (paramType instanceof WildcardType) {
@@ -134,17 +130,5 @@ class Utils {
                     "Call return type must be parameterized as Call<Foo> or Call<? extends Foo>");
         }
         return getParameterUpperBound(0, (ParameterizedType) returnType);
-    }
-
-    static boolean hasNonNullObjectData(final JsonNode node, final String key) {
-        return hasNonNullData(node, key) && node.get(key).isObject();
-    }
-
-    static boolean hasNonNullData(final JsonNode node, final String key) {
-        return node.has(key) && !node.get(key).isNull();
-    }
-
-    static boolean hasNonNullTextualData(final JsonNode node, final String key) {
-        return hasNonNullData(node, key) && node.get(key).isTextual();
     }
 }

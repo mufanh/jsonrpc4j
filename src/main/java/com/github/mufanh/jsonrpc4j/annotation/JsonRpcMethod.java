@@ -1,6 +1,6 @@
 package com.github.mufanh.jsonrpc4j.annotation;
 
-import com.github.mufanh.jsonrpc4j.JsonRpcParamsPassMode;
+import com.github.mufanh.jsonrpc4j.JsonRpcParamsMode;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -17,5 +17,5 @@ public @interface JsonRpcMethod {
 
     String value();
 
-    JsonRpcParamsPassMode paramsPassMode() default JsonRpcParamsPassMode.AUTO;
+    JsonRpcParamsMode paramsPassMode() default JsonRpcParamsMode.AUTO;
 }
