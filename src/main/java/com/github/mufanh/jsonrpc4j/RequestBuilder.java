@@ -69,12 +69,7 @@ final class RequestBuilder {
                 .params(createRequestParams())
                 .build();
 
-        String requestBody;
-        try {
-            requestBody = jsonRpcRetrofit.jsonBodyConverter.convertRequest(jsonRpcRequest);
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to convert json-rpc request", e);
-        }
+        String requestBody = jsonRpcRetrofit.jsonBodyConverter.convertRequest(jsonRpcRequest);
 
         return requestBuilder
                 .url(httpUrl)

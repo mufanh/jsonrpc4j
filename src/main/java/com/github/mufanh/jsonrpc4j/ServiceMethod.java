@@ -49,7 +49,7 @@ class ServiceMethod<R, T> {
     R toResponse(ResponseBody body) throws IOException {
         JsonRpcResponse<R> response;
         try {
-            response = jsonRpcRetrofit.jsonBodyConverter.convertResponse(body.string());
+            response = jsonRpcRetrofit.jsonBodyConverter.convertResponse(callAdapter.responseType(), body.string());
         } catch (Exception e) {
             if (e instanceof IOException) {
                 throw e;
